@@ -6,15 +6,17 @@ Il ruolo gira su **localhost**, cioè sulla macchina da cui lanci Ansible, non s
 
 ## Cosa fa
 
-1. **Crea la cartella di lavoro delle VM** (`vagrant_workdir`, di default `vms/` accanto al playbook). Lì il modulo scrive il `Vagrantfile` e Vagrant salva lo stato delle macchine (`.vagrant/`).
-2. **Crea la cartella dell'inventory** (la cartella che contiene `vagrant_inventory_file`, di default `inventory/`).
-3. **Crea e avvia le VM** con `community.vagrant.vagrant`, a partire dalla lista `vms`: nome, gruppo, RAM, CPU e IP sulla rete privata. Se le VM esistono già e sono accese, il task non cambia niente.
-4. **Scrive l'inventory** `inventory/vagrant.ini` dal template `inventory.j2`. Per ogni VM crea:
+1. **Verifica che la box sia di famiglia RedHat.** Controlla che il nome di `vagrant_box` contenga una delle parole di `vagrant_redhat_box_pattern` (`rocky`, `alma`, `rhel`, `centos`, `oracle`), senza distinguere maiuscole e minuscole. Se non le contiene, il playbook si ferma **prima di creare qualsiasi cartella o VM**. È un controllo sul nome della box: impedisce di usare per sbaglio una box non supportata (ad esempio `ubuntu/jammy64`).
+2. **Verifica che le collection di `requirements.yaml` siano installate.** Legge i nomi delle collection dal `requirements.yaml` nella radice del progetto e, per ognuna, chiede ad Ansible la versione installata con il lookup `community.general.collection_version`. Se una collection manca, il playbook si ferma con il messaggio `Manca la collection <nome>` e il comando per installarla, sempre prima di creare le VM. Così il playbook non va in errore a metà esecuzione per un modulo non trovato.
+3. **Crea la cartella di lavoro delle VM** (`vagrant_workdir`, di default `vms/` accanto al playbook). Lì il modulo scrive il `Vagrantfile` e Vagrant salva lo stato delle macchine (`.vagrant/`).
+4. **Crea la cartella dell'inventory** (la cartella che contiene `vagrant_inventory_file`, di default `inventory/`).
+5. **Crea e avvia le VM** con `community.vagrant.vagrant`, a partire dalla lista `vms`: nome, gruppo, RAM, CPU e IP sulla rete privata.
+6. **Scrive l'inventory** `inventory/vagrant.ini` dal template `inventory.j2`. Per ogni VM crea:
    - la sezione del suo gruppo (`[elasticsearch_server]`, `[grafana_server]`, `[prometheus_server]`);
    - `ansible_host` con l'IP della rete privata;
    - `ansible_ssh_private_key_file` con la chiave che Vagrant genera per ogni VM (`vms/.vagrant/machines/<nome>/virtualbox/private_key`, perché `ssh.insert_key` è attivo);
    - in `[all:vars]`: l'utente `vagrant` e le opzioni SSH che non salvano le host key in `known_hosts`, perché le VM vengono ricreate spesso con gli stessi IP.
-5. **Ricarica l'inventory** con `meta: refresh_inventory`. Ansible legge l'inventory una sola volta all'avvio del playbook: senza questo passaggio i play successivi (`hosts: all`) non vedrebbero le VM appena create. Il refresh viene eseguito a ogni run: costa pochissimo e non modifica niente sulle VM.
+7. **Ricarica l'inventory** con `meta: refresh_inventory`. Ansible legge l'inventory una sola volta all'avvio del playbook: senza questo passaggio i play successivi (`hosts: all`) non vedrebbero le VM appena create. Il refresh viene eseguito a ogni run: costa pochissimo e non modifica niente sulle VM.
 
 ## Variabili (`defaults/main.yml`)
 
@@ -23,6 +25,7 @@ Il ruolo gira su **localhost**, cioè sulla macchina da cui lanci Ansible, non s
 | `vagrant_workdir` | `{{ playbook_dir }}/vms` | Cartella con `Vagrantfile` e stato delle VM |
 | `vagrant_provider` | `virtualbox` | Provider di Vagrant |
 | `vagrant_box` | `generic/rocky9` | Box usata per tutte le VM |
+| `vagrant_redhat_box_pattern` | `(rocky\|alma\|rhel\|centos\|oracle)` | Regex delle box ammesse: il nome di `vagrant_box` deve contenerne almeno una parola |
 | `vagrant_inventory_file` | `{{ playbook_dir }}/inventory/vagrant.ini` | Inventory generato |
 | `vms` | lista | Una voce per VM, con i campi descritti sotto |
 

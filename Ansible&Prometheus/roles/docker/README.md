@@ -2,16 +2,17 @@
 
 Installa e avvia Docker CE sulle VM Rocky Linux / RHEL, e le prepara per essere gestite con i moduli `community.docker` di Ansible.
 
+Il ruolo usa `dnf` e il repository Docker per RHEL, quindi funziona solo su sistemi della famiglia RedHat. Che le VM lo siano viene verificato all'inizio del playbook dal ruolo `vagrant-prov`, prima della loro creazione.
+
 ## Cosa fa
 
-1. **Verifica il sistema operativo:** si ferma con un errore chiaro se l'host non è della famiglia RedHat (Rocky, RHEL, Alma…).
-2. **Rimuove i pacchetti in conflitto** (`podman`, `buildah`, `runc`), solo se `docker_remove_conflicting` è `true`. Su RHEL/Rocky il `runc` di sistema va in conflitto con quello incluso in `containerd.io`, come indicato nella guida ufficiale di Docker.
-3. **Importa la chiave GPG** del repository Docker, per verificare la firma dei pacchetti.
-4. **Aggiunge il repository Docker CE** scaricando `docker-ce.repo` in `/etc/yum.repos.d/`.
-5. **Installa Docker:** engine, CLI, containerd, plugin buildx e plugin compose.
-6. **Installa le librerie Python** necessarie ai moduli `community.docker` sulle VM (`python3-requests`). Senza, i task `docker_container` e `docker_volume` del ruolo `deploy-containers` falliscono con `Failed to import the required Python library (requests)`.
-7. **Avvia e abilita il servizio `docker`**, così riparte da solo al boot.
-8. **Aggiunge gli utenti al gruppo `docker`** (`docker_users`, di default `vagrant`), così possono usare `docker` senza `sudo`. Usa `append: true` per non togliere gli altri gruppi dell'utente, come `wheel`.
+1. **Rimuove i pacchetti in conflitto** (`podman`, `buildah`, `runc`), solo se `docker_remove_conflicting` è `true`. Su RHEL/Rocky il `runc` di sistema va in conflitto con quello incluso in `containerd.io`, come indicato nella guida ufficiale di Docker.
+2. **Importa la chiave GPG** del repository Docker, per verificare la firma dei pacchetti.
+3. **Aggiunge il repository Docker CE** scaricando `docker-ce.repo` in `/etc/yum.repos.d/`.
+4. **Installa Docker:** engine, CLI, containerd, plugin buildx e plugin compose.
+5. **Installa le librerie Python** necessarie ai moduli `community.docker` sulle VM (`python3-requests`). Senza, i task `docker_container` e `docker_volume` del ruolo `deploy-containers` falliscono con `Failed to import the required Python library (requests)`.
+6. **Avvia e abilita il servizio `docker`**, così riparte da solo al boot.
+7. **Aggiunge gli utenti al gruppo `docker`** (`docker_users`, di default `vagrant`), così possono usare `docker` senza `sudo`. Usa `append: true` per non togliere gli altri gruppi dell'utente, come `wheel`.
 
 ## Variabili
 

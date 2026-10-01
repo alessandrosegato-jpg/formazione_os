@@ -1,9 +1,4 @@
 ---
-- name: Verifica che il sistema sia della famiglia RedHat
-  ansible.builtin.assert:
-    that: ansible_facts['os_family'] == "RedHat"
-    fail_msg: "Questo ruolo supporta solo Rocky/RHEL e derivate"
-
 - name: Rimuovi pacchetti in conflitto
   ansible.builtin.dnf:
     name: "{{ docker_conflicting_packages }}"

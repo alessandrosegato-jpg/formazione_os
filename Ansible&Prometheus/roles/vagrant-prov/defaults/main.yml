@@ -3,6 +3,7 @@
 vagrant_workdir: "{{ playbook_dir }}/vms"
 vagrant_provider: virtualbox
 vagrant_box: generic/rocky9
+vagrant_redhat_box_pattern: "(rocky|alma|rhel|centos|oracle)"
 vagrant_inventory_file: "{{ playbook_dir }}/inventory/vagrant.ini"
 
 vms:

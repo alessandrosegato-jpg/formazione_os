@@ -1,0 +1,45 @@
+---
+- name: Verifica che la box sia di famiglia RedHat
+  ansible.builtin.assert:
+    that: vagrant_box is search(vagrant_redhat_box_pattern, ignorecase=true)
+    fail_msg: >-
+      La box '{{ vagrant_box }}' non sembra di famiglia RedHat.
+      Usa una box Rocky, AlmaLinux, RHEL, CentOS o Oracle Linux.
+    success_msg: "Box {{ vagrant_box }} ammessa"
+
+- name: Verifica che le collection di requirements.yaml siano installate
+  ansible.builtin.assert:
+    that: lookup('community.general.collection_version', item) is not none
+    fail_msg: >-
+      Manca la collection {{ item }}.
+      Installala con: ansible-galaxy collection install -r requirements.yaml
+    success_msg: "{{ item }} {{ lookup('community.general.collection_version', item) }} presente"
+  loop: "{{ (lookup('ansible.builtin.file', playbook_dir ~ '/requirements.yaml') | from_yaml).collections | map(attribute='name') }}"
+
+- name: Crea la cartella di lavoro per le VM
+  ansible.builtin.file:
+    path: "{{ vagrant_workdir }}"
+    state: directory
+    mode: "0755"
+
+- name: Crea la cartella per l'inventory
+  ansible.builtin.file:
+    path: "{{ vagrant_inventory_file | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Crea e avvia le VM
+  community.vagrant.vagrant:
+    workdir: "{{ vagrant_workdir }}"
+    provider_name: "{{ vagrant_provider }}"
+    default_box: "{{ vagrant_box }}"
+    instances: "{{ vms }}"
+
+- name: Scrivi l'inventario
+  ansible.builtin.template:
+    src: inventory.j2
+    dest: "{{ vagrant_inventory_file }}"
+    mode: "0644"
+
+- name: Ricarica l'inventory appena generato
+  ansible.builtin.meta: refresh_inventory

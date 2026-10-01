@@ -1,0 +1,44 @@
+---
+# Node Exporter
+node_exporter_version: "1.12.1"
+node_exporter_arch: linux-amd64
+
+node_exporter_release: "node_exporter-{{ node_exporter_version }}.{{ node_exporter_arch }}"
+node_exporter_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_release }}.tar.gz"
+
+node_exporter_user: node_exporter
+node_exporter_home: "/home/{{ node_exporter_user }}"
+
+node_exporter_ports:
+  elasticsearch-host: 9100
+  monitoring-grafana: 9101
+  monitoring-prometheus: 9102
+node_exporter_port: "{{ node_exporter_ports[inventory_hostname] }}"
+
+# Elasticsearch
+elasticsearch_container_name: elasticsearch
+elasticsearch_config_dir: /etc/elasticsearch
+elasticsearch_data_volume: elasticsearch_data
+elasticsearch_image: docker.elastic.co/elasticsearch/elasticsearch
+elasticsearch_version: "8.18.0"
+elasticsearch_port: 9200
+elasticsearch_heap: 1g
+
+# Prometheus
+prometheus_container_name: prometheus
+prometheus_config_dir: /etc/prometheus
+prometheus_data_volume: prometheus_data
+prometheus_image: prom/prometheus
+prometheus_version: "v3.4.0"
+prometheus_port: 9090
+
+# Grafana
+grafana_container_name: grafana
+grafana_data_volume: grafana_data
+grafana_image: grafana/grafana
+grafana_version: "12.0.0"
+grafana_port: 3000
+grafana_admin_password: "{{ vault_grafana_admin_password }}"
+grafana_provisioning_dir: /etc/grafana/provisioning
+grafana_dashboard_id: "1860"
+grafana_dashboard_revision: "41"

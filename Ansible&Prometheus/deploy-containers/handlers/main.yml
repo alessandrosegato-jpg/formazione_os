@@ -1,0 +1,27 @@
+---
+- name: Riavvia node_exporter
+  ansible.builtin.systemd:
+    name: node_exporter
+    scope: user
+    state: restarted
+    daemon_reload: true
+  become: true
+  become_user: "{{ node_exporter_user }}"
+
+- name: Riavvia elasticsearch
+  community.docker.docker_container:
+    name: "{{ elasticsearch_container_name }}"
+    state: started
+    restart: true
+
+- name: Riavvia prometheus
+  community.docker.docker_container:
+    name: "{{ prometheus_container_name }}"
+    state: started
+    restart: true
+
+- name: Riavvia grafana
+  community.docker.docker_container:
+    name: "{{ grafana_container_name }}"
+    state: started
+    restart: true

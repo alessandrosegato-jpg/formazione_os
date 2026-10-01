@@ -1,0 +1,45 @@
+---
+- name: Verifica che il sistema sia della famiglia RedHat
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] == "RedHat"
+    fail_msg: "Questo ruolo supporta solo Rocky/RHEL e derivate"
+
+- name: Rimuovi pacchetti in conflitto
+  ansible.builtin.dnf:
+    name: "{{ docker_conflicting_packages }}"
+    state: absent
+  when: docker_remove_conflicting
+
+- name: Importa la chiave GPG di Docker
+  ansible.builtin.rpm_key:
+    key: "{{ docker_gpg_key }}"
+    state: present
+
+- name: Aggiungi il repository Docker CE
+  ansible.builtin.get_url:
+    url: "{{ docker_repo_url }}"
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: "0644"
+
+- name: Installa Docker
+  ansible.builtin.dnf:
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Installa le librerie Python per i moduli community.docker
+  ansible.builtin.dnf:
+    name: "{{ docker_python_packages }}"
+    state: present
+
+- name: Avvia e abilita il servizio Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Aggiungi gli utenti al gruppo docker
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"

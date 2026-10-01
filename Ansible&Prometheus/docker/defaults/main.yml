@@ -1,0 +1,19 @@
+---
+# Pacchetti docker
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Quali pacchetti rimuovere e se rimuoverli
+docker_remove_conflicting: false
+docker_conflicting_packages:
+  - podman
+  - buildah
+  - runc
+
+# Utenti docker
+docker_users:
+  - vagrant

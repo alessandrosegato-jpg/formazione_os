@@ -1,0 +1,32 @@
+---
+- name: Crea la cartella per le opzioni JVM
+  ansible.builtin.file:
+    path: "{{ elasticsearch_config_dir }}/jvm.options.d"
+    state: directory
+    mode: "0755"
+
+- name: Scrivi il file con l'heap della JVM
+  ansible.builtin.template:
+    src: heap.options.j2
+    dest: "{{ elasticsearch_config_dir }}/jvm.options.d/heap.options"
+    mode: "0644"
+  notify: Riavvia elasticsearch
+
+- name: Crea il volume per i dati
+  community.docker.docker_volume:
+    name: "{{ elasticsearch_data_volume }}"
+
+- name: Avvia il container Elasticsearch
+  community.docker.docker_container:
+    name: "{{ elasticsearch_container_name }}"
+    image: "{{ elasticsearch_image }}:{{ elasticsearch_version }}"
+    state: started
+    restart_policy: unless-stopped
+    published_ports:
+      - "{{ elasticsearch_port }}:9200"
+    env:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+    volumes:
+      - "{{ elasticsearch_config_dir }}/jvm.options.d/heap.options:/usr/share/elasticsearch/config/jvm.options.d/heap.options:ro"
+      - "{{ elasticsearch_data_volume }}:/usr/share/elasticsearch/data"

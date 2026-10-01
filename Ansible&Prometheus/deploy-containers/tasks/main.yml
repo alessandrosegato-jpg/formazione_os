@@ -1,0 +1,15 @@
+---
+- name: Installa node_exporter
+  ansible.builtin.include_tasks: node_exporter.yaml
+
+- name: Deploy Elasticsearch
+  ansible.builtin.include_tasks: elasticsearch-host.yaml
+  when: "'elasticsearch_server' in group_names"
+
+- name: Deploy Prometheus
+  ansible.builtin.include_tasks: monitoring-prometheus.yaml
+  when: "'prometheus_server' in group_names"
+
+- name: Deploy Grafana
+  ansible.builtin.include_tasks: monitoring-grafana.yaml
+  when: "'grafana_server' in group_names"

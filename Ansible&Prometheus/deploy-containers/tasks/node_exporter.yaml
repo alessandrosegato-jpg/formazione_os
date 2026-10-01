@@ -1,0 +1,63 @@
+---
+- name: Crea l'utente node_exporter con la sua home
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    home: "{{ node_exporter_home }}"
+    create_home: true
+    shell: /sbin/nologin
+
+- name: Scarica ed estrai node_exporter
+  ansible.builtin.unarchive:
+    src: "{{ node_exporter_url }}"
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/{{ node_exporter_release }}/node_exporter"
+
+- name: Installa il binario in /usr/local/bin
+  ansible.builtin.copy:
+    src: "/tmp/{{ node_exporter_release }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Riavvia node_exporter
+
+- name: Abilita il linger per l'utente
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ node_exporter_user }}"
+    creates: "/var/lib/systemd/linger/{{ node_exporter_user }}"
+
+- name: Crea la cartella per le unit utente
+  ansible.builtin.file:
+    path: "{{ node_exporter_home }}/.config/systemd/user"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+    mode: "0755"
+
+- name: Crea il servizio systemd utente
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: "{{ node_exporter_home }}/.config/systemd/user/node_exporter.service"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+    mode: "0644"
+  notify: Riavvia node_exporter
+
+- name: Apri la porta di node_exporter nel firewall
+  ansible.posix.firewalld:
+    port: "{{ node_exporter_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Avvia e abilita node_exporter (scope utente)
+  ansible.builtin.systemd:
+    name: node_exporter
+    scope: user
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true
+  become_user: "{{ node_exporter_user }}"

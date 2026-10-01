@@ -1,0 +1,29 @@
+---
+- name: Crea la cartella di configurazione di Prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Scrivi prometheus.yml
+  ansible.builtin.template:
+    src: prometheus.yaml.j2
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    mode: "0644"
+  notify: Riavvia prometheus
+
+- name: Crea il volume persistente per i dati
+  community.docker.docker_volume:
+    name: "{{ prometheus_data_volume }}"
+
+- name: Avvia il container Prometheus
+  community.docker.docker_container:
+    name: "{{ prometheus_container_name }}"
+    image: "{{ prometheus_image }}:{{ prometheus_version }}"
+    state: started
+    restart_policy: unless-stopped
+    published_ports:
+      - "{{ prometheus_port }}:9090"
+    volumes:
+      - "{{ prometheus_config_dir }}:/etc/prometheus:ro"
+      - "{{ prometheus_data_volume }}:/prometheus"

@@ -1,0 +1,50 @@
+---
+- name: Crea la cartella di provisioning dei datasource
+  ansible.builtin.file:
+    path: "{{ grafana_provisioning_dir }}/datasources"
+    state: directory
+    mode: "0755"
+
+- name: Configura il datasource Prometheus
+  ansible.builtin.template:
+    src: grafana-datasource.yaml.j2
+    dest: "{{ grafana_provisioning_dir }}/datasources/prometheus.yml"
+    mode: "0644"
+  notify: Riavvia grafana
+
+- name: Crea il volume persistente per i dati
+  community.docker.docker_volume:
+    name: "{{ grafana_data_volume }}"
+
+- name: Avvia il container Grafana
+  community.docker.docker_container:
+    name: "{{ grafana_container_name }}"
+    image: "{{ grafana_image }}:{{ grafana_version }}"
+    state: started
+    restart_policy: unless-stopped
+    published_ports:
+      - "{{ grafana_port }}:3000"
+    env:
+      GF_SECURITY_ADMIN_PASSWORD: "{{ grafana_admin_password }}"
+    volumes:
+      - "{{ grafana_provisioning_dir }}:/etc/grafana/provisioning:ro"
+      - "{{ grafana_data_volume }}:/var/lib/grafana"
+
+- name: Attendi che Grafana sia pronto
+  ansible.builtin.uri:
+    url: "http://localhost:{{ grafana_port }}/api/health"
+    status_code: 200
+  register: grafana_health
+  until: grafana_health.status == 200
+  retries: 30
+  delay: 2
+
+- name: Importa la dashboard Node Exporter Full
+  community.grafana.grafana_dashboard:
+    url: "http://localhost:{{ grafana_port }}"
+    url_username: admin
+    url_password: "{{ grafana_admin_password }}"
+    dashboard_id: "{{ grafana_dashboard_id }}"
+    dashboard_revision: "{{ grafana_dashboard_revision }}"
+    overwrite: true
+    state: present

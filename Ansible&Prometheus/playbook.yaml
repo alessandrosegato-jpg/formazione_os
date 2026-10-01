@@ -1,0 +1,17 @@
+---
+- name: Avvia il provisioning delle VM
+  hosts: localhost
+  roles:
+    - vagrant-prov
+
+- name: Installa docker sulle VM
+  hosts: all
+  become: true
+  roles:
+    - docker
+
+- name: Deploy dei servizi
+  hosts: all
+  become: true
+  roles:
+    - deploy-containers

@@ -1,0 +1,29 @@
+---
+# Configurazione VM
+vagrant_workdir: "{{ playbook_dir }}/vms"
+vagrant_provider: virtualbox
+vagrant_box: generic/rocky9
+vagrant_inventory_file: "{{ playbook_dir }}/inventory/vagrant.ini"
+
+vms:
+  - name: elasticsearch-host
+    group: elasticsearch_server
+    memory: 1024
+    cpus: 1
+    interfaces:
+      - network_name: private_network
+        ip: 192.168.3.40
+  - name: monitoring-grafana
+    group: grafana_server
+    memory: 512
+    cpus: 1
+    interfaces:
+      - network_name: private_network
+        ip: 192.168.3.41
+  - name: monitoring-prometheus
+    group: prometheus_server
+    memory: 512
+    cpus: 1
+    interfaces:
+      - network_name: private_network
+        ip: 192.168.3.42

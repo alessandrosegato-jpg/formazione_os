@@ -1,0 +1,6 @@
+---
+docker_repo_url: https://download.docker.com/linux/rhel/docker-ce.repo
+docker_gpg_key: https://download.docker.com/linux/rhel/gpg
+
+docker_python_packages:
+  - python3-requests
